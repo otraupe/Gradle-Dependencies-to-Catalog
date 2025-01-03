@@ -18,6 +18,7 @@ dependencies {
     intellijPlatform {
         //intellijIdeaCommunity("2024.1.7")
         androidStudio("2024.2.1.12")
+        //local("C:\\Users\\ole\\AppData\\Local\\Programs\\Android Studio")
     }
 }
 
