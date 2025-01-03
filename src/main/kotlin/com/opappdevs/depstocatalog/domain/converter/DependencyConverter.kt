@@ -12,8 +12,11 @@ class DependencyConverter {
             """implementation\s*(?:\(?\s*['"]|['"])([\w.-]+):([\w.-]+):([\w.-]+)(?:['"]?\s*\)?|['"])"""
                 .toRegex()
 
-        fun containsDependencyDeclaration(text: String): Boolean {
-            return DEPENDENCY_REGEX.find(text) != null
+        fun containsDependencyDeclaration(document: Document, startLine: Int, endLine: Int): Boolean {
+            val selectionStart = document.getLineStartOffset(startLine)
+            val selectionEnd = document.getLineEndOffset(endLine)
+            val selectionText = document.getText(TextRange(selectionStart, selectionEnd))
+            return DEPENDENCY_REGEX.findAll(selectionText).any()
         }
 
         fun findDependencyOccurrences(

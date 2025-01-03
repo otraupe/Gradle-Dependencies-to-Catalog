@@ -9,11 +9,13 @@ import com.opappdevs.depstocatalog.infrastructure.editor.EditorOperations
 
 class ConvertDependencyAction: AnAction() {
 
-    // used to enable/disable the menu (upon certain conditions; e.g. text selected)
+    // disable the menu item if no matches
     override fun update(e: AnActionEvent) {
-        //super.update(e)
         val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabledAndVisible = editor != null
+        e.presentation.isEnabled = editor?.let {
+            val (startLine, endLine) = EditorOperations.determineOperatingLines(it)
+            DependencyConverter.containsDependencyDeclaration(it.document, startLine, endLine)
+        } ?: false
     }
 
     // called when the menu or toolbar is clicked
