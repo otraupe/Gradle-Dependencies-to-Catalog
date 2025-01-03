@@ -9,6 +9,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.codeStyle.CodeStyleManager
 
+// TODO: this should contain all DocumentOperations
 class EditorOperations {
     companion object {
         fun determineOperatingLines(editor: Editor): Pair<Int, Int> {
@@ -16,13 +17,15 @@ class EditorOperations {
             val caretModel = editor.caretModel
             val document = editor.document
 
-            //return Pair(startLine, endLine)
+            // return start and end line if text selected
             return if (selectionModel.hasSelection()) {
                 Pair(
                     document.getLineNumber(selectionModel.selectionStart),
                     document.getLineNumber(selectionModel.selectionEnd)
                 )
-            } else {
+            }
+            // else return caret line
+            else {
                 val line = document.getLineNumber(caretModel.offset)
                 Pair(line, line)
             }
@@ -36,15 +39,17 @@ class EditorOperations {
             endOffset: Int,
             convertedText: String
         ) {
+            // replace text with conversion result and select it
             WriteCommandAction.runWriteCommandAction(project) {
                 document.replaceString(startOffset, endOffset, convertedText)
             }
             val newEndOffset = startOffset + convertedText.length
             editor.selectionModel.setSelection(startOffset, newEndOffset)
 
-            // Commit document before adjusting indentation
+            // commit document before adjusting indentation
             PsiDocumentManager.getInstance(project).commitDocument(document)
 
+            // auto-indent selected conversion result
             val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
             if (psiFile != null) {
                 WriteCommandAction.runWriteCommandAction(project) {
@@ -56,4 +61,3 @@ class EditorOperations {
         }
     }
 }
-

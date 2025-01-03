@@ -18,20 +18,19 @@ class ConvertDependencyAction: AnAction() {
         } ?: false
     }
 
-    // called when the menu or toolbar is clicked
     override fun actionPerformed(e: AnActionEvent) {
-        val editor = e.getRequiredData(CommonDataKeys.EDITOR)
         val project = e.getRequiredData(CommonDataKeys.PROJECT)
+        val editor = e.getRequiredData(CommonDataKeys.EDITOR)
         val document = editor.document
 
         val (startLine, endLine) = EditorOperations.determineOperatingLines(editor)
-        val (startOffset, endOffset) = DependencyConverter.findDependencyOccurrences(document, startLine, endLine, project)
+        val (startOffset, endOffset) = DependencyConverter.findDependencyTextRange(document, startLine, endLine)
         val convertedText = DependencyConverter.convertDependencies(document, startOffset, endOffset)
         EditorOperations.insertAndFormatResult(editor, document, project, startOffset, endOffset, convertedText)
     }
 
     // override when you target 2022.3 or later
     override fun getActionUpdateThread(): ActionUpdateThread {
-        return super.getActionUpdateThread()
+        return ActionUpdateThread.BGT // background thread (vs. EDT -> event driven)
     }
 }

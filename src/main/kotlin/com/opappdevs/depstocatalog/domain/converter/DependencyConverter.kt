@@ -1,10 +1,8 @@
 package com.opappdevs.depstocatalog.domain.converter
 
 import com.intellij.openapi.editor.Document
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.TextRange
-import com.opappdevs.depstocatalog.domain.model.DependencyDeclaration
+import com.opappdevs.depstocatalog.domain.model.CatalogFormat
 
 class DependencyConverter {
     companion object {
@@ -19,16 +17,15 @@ class DependencyConverter {
             return DEPENDENCY_REGEX.findAll(selectionText).any()
         }
 
-        fun findDependencyOccurrences(
+        fun findDependencyTextRange(
             document: Document,
             startLine: Int,
-            endLine: Int,
-            project: Project
+            endLine: Int
         ): Pair<Int, Int> {
             var firstOccurrence: MatchResult? = null
             var lastOccurrence: MatchResult? = null
 
-            for (lineNumber in startLine..endLine) {
+            for (lineNumber in startLine..endLine) {    // TODO: remove line breaks, don't iterate
                 val lineStart = document.getLineStartOffset(lineNumber)
                 val lineEnd = document.getLineEndOffset(lineNumber)
                 val lineText = document.getText(TextRange(lineStart, lineEnd))
@@ -40,15 +37,13 @@ class DependencyConverter {
                     lastOccurrence = match
                 }
             }
-
             if (firstOccurrence == null) {
-                Messages.showErrorDialog(project, "No valid dependency declarations found", "Error")
+                //Messages.showErrorDialog(project, "No valid dependency declarations found", "Error")
                 throw IllegalStateException("No valid dependency declarations found")
             }
-
+            // TODO: BUG: startLine and endLine must be lines with matches
             val startOffset = document.getLineStartOffset(startLine) + (firstOccurrence!!.range.first)
             val endOffset = document.getLineStartOffset(endLine) + (lastOccurrence!!.range.last) + 1
-
             return Pair(startOffset, endOffset)
         }
 
@@ -61,45 +56,39 @@ class DependencyConverter {
             val textWithoutLineBreaks = selectedText.replace(Regex("\\R"), "")
 
             val declarations = DEPENDENCY_REGEX.findAll(textWithoutLineBreaks)
-                .map { createDependencyDeclaration(it) }
+                .map { createCatalogFormat(it) }
                 .toList()
 
             return buildString {
-                // Version definitions
+                // version definitions
                 append(declarations.map { it.versionDefinition }.distinct().joinToString("\n"))
                 appendLine()
-
-                // Dependency definitions
+                // dependency definitions
                 append(declarations.map { it.dependencyDefinition }.distinct().joinToString("\n"))
                 appendLine()
-
-                // Implementation statements
-                append(declarations.map { it.implementationStatement }.distinct().joinToString("\n"))
+                // dependency declaration
+                append(declarations.map { it.dependencyDeclaration }.distinct().joinToString("\n"))
             }
         }
 
-        private fun createDependencyDeclaration(matchResult: MatchResult): DependencyDeclaration {
-            val (group, artifactName, version) = matchResult.destructured
-            val versionVariable = group.substringAfterLast('.').lowercase()
+        private fun createCatalogFormat(matchResult: MatchResult): CatalogFormat {
+            val (group, artifact, version) = matchResult.destructured
+            val versionLabel = group.substringAfterLast('.').lowercase()
             val groupParts = group.split('.')
-//            val dependencyLabel = if (groupParts.size >= 2) {
-//                "${groupParts[groupParts.size - 2]}${"-"}${groupParts.last()}${"-"}$artifactName".lowercase()
-//            } else {
-//                "${groupParts.last()}${"-"}$artifactName".lowercase()
-//            }
-            val dependencyLabel = if (groupParts.size >= 2) {
-                groupParts[groupParts.size - 2].trim() + "-" + groupParts.last().trim() + "-" + artifactName.trim()
+
+            val labelBase = "${groupParts.last()}-$artifact"
+            val definitionLabel = if (groupParts.size >= 2) {
+                "${groupParts[groupParts.size - 2]}-$labelBase"
             } else {
-                groupParts.last().trim() + "-" + artifactName.trim()
+                labelBase
             }.lowercase()
 
-
-            return DependencyDeclaration(
+            return CatalogFormat(
                 group = group,
-                artifactName = artifactName,
+                artifact = artifact,
                 version = version,
-                versionVariable = versionVariable,
-                dependencyLabel = dependencyLabel.replace('.', '-')
+                versionLabel = versionLabel,
+                definitionLabel = definitionLabel
             )
         }
     }

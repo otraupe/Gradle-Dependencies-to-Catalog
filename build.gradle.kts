@@ -1,3 +1,5 @@
+//import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.25"
@@ -16,14 +18,17 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        //intellijIdeaCommunity("2024.1.7")
-        androidStudio("2024.2.1.12")
+        intellijIdeaCommunity("2024.1.7")
+        //androidStudio("2024.2.1.12")
         //local("C:\\Users\\ole\\AppData\\Local\\Programs\\Android Studio")
+
+        //testFramework(TestFrameworkType.Platform)
     }
+    testImplementation(kotlin("test"))
 }
 
 tasks {
-    // Set the JVM compatibility versions
+    // JVM compatibility versions
     withType<JavaCompile> {
         sourceCompatibility = "17"
         targetCompatibility = "17"
